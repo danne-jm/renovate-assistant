@@ -1,0 +1,21 @@
+services:
+  renovate:
+    image: renovate/renovate:43.10-full
+    # Restart policy: helpful if it crashes on a specific repo
+    restart: "no" 
+    user: "1000:1000" # Run as your current user ID (prevents permission issues with cache)
+    volumes:
+      - ./config.js:/usr/src/app/config.js
+      # THIS IS YOUR CACHE: Maps a docker volume to renovate's internal cache
+      - renovate_cache:/tmp/renovate
+    environment:
+      # Pass the token securely
+      - RENOVATE_TOKEN=${RENOVATE_TOKEN}
+      # "info" is standard, "debug" is good for PoC
+      - LOG_LEVEL=info 
+      # Optional: Identify your bot to git (prevents some git errors)
+      - GIT_AUTHOR_NAME=Renovate Bot
+      - GIT_AUTHOR_EMAIL=bot@renovateapp.com
+
+volumes:
+  renovate_cache:
