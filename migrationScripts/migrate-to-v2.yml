@@ -1,0 +1,53 @@
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: com.yourorg.FullAppMigration
+displayName: Full Application V2 Migration
+description: >
+  Renames getAllProducts → getAllSellables everywhere (defs, calls, imports)
+  and updates its parameter list to the new signature:
+    getAllSellables(option, token = 404, seed)
+
+recipeList:
+
+  # ── Step 1 ─────────────────────────────────────────────────────────────────
+  # Rename the function in declarations, call sites, and import specifiers.
+  # Run this BEFORE TransformParams so the param recipe targets the new name.
+  - com.yourorg.RenameFunction:
+      oldName: getAllProducts
+      newName: getAllSellables
+      target: all
+      # Uncomment and supply include/exclude globs or /regex/ to narrow scope:
+      # includeFiles: "src/**"
+      # excludeFiles: "*.spec.ts"
+
+  # ── Step 2 ─────────────────────────────────────────────────────────────────
+  # Rewrite the parameter list for the now-renamed function.
+  #
+  # Original signature (example):   getAllProducts(token)
+  # New signature:                   getAllSellables(option, token = 404, seed)
+  #
+  # Mapping rules applied by TransformParams:
+  #   • option – required (kept from existing arg when present)
+  #   • token  – required; default value set to 404 and fallback at call sites is 404
+  #   • seed   – optional; omitted at call sites when missing
+  #
+  # If the original function had MORE params than just `token`, list them all
+  # in `oldParams` so call-site argument positions are resolved correctly.
+  - com.yourorg.TransformParams:
+      oldName: getAllSellables
+      # Declare what the original parameter order looked like so positional
+      # call-site arguments are mapped properly even without a local definition:
+      oldParams:
+        - token
+      # Used when a required param has no matching argument and no callValue:
+      defaultCallValue: "404"
+      params:
+        - name: option
+          required: true
+        - name: token
+          defaultValue: "404"      # adds `= 404` to the function definition
+          required: true
+        - name: seed
+          required: false
+      # Set to true to keep any extra existing call arguments after the mapped ones:
+      preserveExtraArgs: false
